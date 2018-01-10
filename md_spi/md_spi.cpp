@@ -1,6 +1,8 @@
 #include "md_spi.h"
 #include <stdio.h>
 #include <string.h>
+#include "md_mgr.h"
+
 
 //front address connected
 void MD_SPI::OnFrontConnected()
