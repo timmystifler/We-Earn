@@ -5,7 +5,7 @@
 #include "error_def.h"
 #include "md_spi.h"
 
-char gs_ip_addr[] = "tcp://218.202.237.33:10012";
+char gs_ip_addr[] = "tcp://180.168.146.187:10013";
 
 int main()
 {
@@ -23,8 +23,6 @@ int main()
 	spi->RegisterApiHandle(api);
 	api->RegisterFront((char *)gs_ip_addr);
 	api->Init();
-
-	printf("aaa");
 
 	api->Join();
 

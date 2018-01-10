@@ -9,7 +9,7 @@ APP_EXE=./$(MOD_NAME)
 
 APP_LIB	= ./lib/trader_api_636/thostmduserapi.so ./lib/trader_api_636/thosttraderapi.so
 
-SUB_MODULES= . login
+SUB_MODULES= . init md_spi trade_spi
 
 CINC += $(foreach dir,$(SUB_MODULES),-I $(dir))
 CINC += -I ./lib/trader_api_636
