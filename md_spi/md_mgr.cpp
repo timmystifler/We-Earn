@@ -1,4 +1,5 @@
 #include "md_mgr.h"
+#include <stdio.h>
 
 static MD_MGR gs_md_mgr;
 
