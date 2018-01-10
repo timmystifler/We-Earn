@@ -17,7 +17,7 @@ struct MD_MGR
 
 int md_mgr_init();
 
-void md_mgr_insert_data(CThostFtdcDepthMarketDataField);
+void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data);
 
 
 
