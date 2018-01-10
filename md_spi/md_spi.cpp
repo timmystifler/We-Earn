@@ -71,5 +71,6 @@ void MD_SPI::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketDa
 		printf("BidPrice1:%lf\n", pDepthMarketData->BidPrice1);
 
 		//todo manuzhang
+		md_mgr_insert_data(*pDepthMarketData);
 	}
 }
