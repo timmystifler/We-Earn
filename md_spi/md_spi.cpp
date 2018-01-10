@@ -42,7 +42,7 @@ void MD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 	}
 }
 
-char *gs_instrument_id[] = {"cu1205", "cu1206"};
+char *gs_instrument_id[] = {"CU1205", "CU1206", "CU1803"};
 void MD_SPI::ReqSubscribeMarketData()
 {
 	_api->SubscribeMarketData(gs_instrument_id, sizeof(gs_instrument_id) / sizeof(gs_instrument_id[0]));
@@ -61,7 +61,7 @@ void MD_SPI::OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInst
 	}
 }
 
-void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
+void MD_SPI::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	if (pDepthMarketData)
 	{

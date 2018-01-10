@@ -23,6 +23,7 @@ class MD_SPI : public CThostFtdcMdSpi
 				CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 		// so far no need this.
 		void ReqSubscribeQuoteRsp();
+        void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData);
 	private:
 		CThostFtdcMdApi *_api;
 };
