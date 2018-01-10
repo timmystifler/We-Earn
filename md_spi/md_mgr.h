@@ -4,6 +4,7 @@
 #include "ThostFtdcUserApiStruct.h"
 #include <map>
 #include <string>
+#include <vector>
 
 typedef std::vector<CThostFtdcDepthMarketDataField> MD_VEC;
 
