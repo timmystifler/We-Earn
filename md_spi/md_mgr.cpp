@@ -18,12 +18,12 @@ int md_mgr_init()
 {
     printf("[INFO] md mgr init success!\n");
     
-	return 0;
+    return 0;
 }
 
 void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data)
 {
-	std::string id = data.InstrumentID;
+    std::string id = data.InstrumentID;
 
     MD_VEC* vec = _md_mgr_get_md_vec_by_id(id);
     if (vec == NULL)
@@ -45,9 +45,9 @@ void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data)
 MD_VEC* _md_mgr_get_md_vec_by_id(std::string id)
 {
 
-	MD_MAP::iterator iter;
+    MD_MAP::iterator iter;
 
-	iter = gs_md_mgr._map.find(id);
+    iter = gs_md_mgr._map.find(id);
 
     if (iter != gs_md_mgr._map.end())
     {
