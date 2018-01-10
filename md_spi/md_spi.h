@@ -6,26 +6,36 @@
 
 class MD_SPI : public CThostFtdcMdSpi
 {
-	public:
-		void OnFrontConnected();
-		void OnFrontDisconnected(int nReason) {}
+    public:
+        void OnFrontConnected();
+        void OnFrontDisconnected(int nReason) {}
 
-		// may never call this function
-		void OnHeartBeatWarning(int nTimeLapse) {}
-		void RegisterApiHandle(CThostFtdcMdApi *api) { _api = api; }
-		void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
-						CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+        // may never call this function
+        void OnHeartBeatWarning(int nTimeLapse) {}
+        void RegisterApiHandle(CThostFtdcMdApi *api) { _api = api; }
+        void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
+                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
-		void ReqUserLogout();
-		void ReqSubscribeMarketData();
+        void ReqUserLogout();
+        void ReqSubscribeMarketData();
 
-		void OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, 
-				CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
-		// so far no need this.
-		void ReqSubscribeQuoteRsp();
+        void OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, 
+                CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+        // so far no need this.
+        void ReqSubscribeQuoteRsp();
         void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData);
-	private:
-		CThostFtdcMdApi *_api;
+
+        void OnRspSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){}
+
+        void OnRspUnSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){}
+
+        void OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){}
+
+        void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp){}
+
+        void PrintMarketData(CThostFtdcDepthMarketDataField &pDepthMarketData);
+    private:
+        CThostFtdcMdApi *_api;
 };
 
 #endif

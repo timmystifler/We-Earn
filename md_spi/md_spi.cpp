@@ -3,7 +3,6 @@
 #include <string.h>
 #include "md_mgr.h"
 
-
 //front address connected
 void MD_SPI::OnFrontConnected()
 {
@@ -44,7 +43,7 @@ void MD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 	}
 }
 
-char *gs_instrument_id[] = {"cu1205", "cu1206", "cu1803"};
+char *gs_instrument_id[] = {"ru1805", "cu1803"};
 void MD_SPI::ReqSubscribeMarketData()
 {
 	_api->SubscribeMarketData(gs_instrument_id, sizeof(gs_instrument_id) / sizeof(gs_instrument_id[0]));
@@ -67,12 +66,43 @@ void MD_SPI::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketDa
 {
 	if (pDepthMarketData)
 	{
-		printf("TradingDay:%s\n", pDepthMarketData->TradingDay);
-		printf("InstrumentID:%s\n", pDepthMarketData->InstrumentID);
-		printf("AskVolume1:%d\n", pDepthMarketData->AskVolume1);
-		printf("BidPrice1:%lf\n", pDepthMarketData->BidPrice1);
+        PrintMarketData(*pDepthMarketData);
 
 		//todo manuzhang
 		md_mgr_insert_data(*pDepthMarketData);
 	}
+}
+
+void MD_SPI::PrintMarketData(CThostFtdcDepthMarketDataField &pDepthMarketData)
+{
+    bool print_on = false;
+
+    if (print_on)
+    {
+		printf("TradingDay:%s\n", pDepthMarketData.TradingDay);
+		printf("InstrumentID:%s\n", pDepthMarketData.InstrumentID);
+		printf("LastPrice:%lf\n", pDepthMarketData.LastPrice);
+		printf("PreSettlementPrice:%lf\n", pDepthMarketData.PreSettlementPrice);
+		printf("PreClosePrice:%lf\n", pDepthMarketData.PreClosePrice);
+		printf("PreOpenInterest:%lf\n", pDepthMarketData.PreOpenInterest);
+		printf("OpenPrice:%lf\n", pDepthMarketData.OpenPrice);
+		printf("HighestPrice:%lf\n", pDepthMarketData.HighestPrice);
+		printf("LowestPrice:%lf\n", pDepthMarketData.LowestPrice);
+		printf("Volume:%d\n", pDepthMarketData.Volume);
+		printf("Turnover:%lf\n", pDepthMarketData.Turnover);
+		printf("OpenInterest:%lf\n", pDepthMarketData.OpenInterest);
+		//printf("ClosePrice:%lf\n", pDepthMarketData.ClosePrice);
+		//printf("SettlementPrice:%lf\n", pDepthMarketData.SettlementPrice);
+		printf("BidPrice1:%lf\n", pDepthMarketData.BidPrice1);
+		printf("BidVolume1:%lf\n", pDepthMarketData.BidVolume1);
+		//printf("BidPrice2:%lf\n", pDepthMarketData.BidPrice2);
+		//printf("BidVolume2:%lf\n", pDepthMarketData.BidVolume2);
+		printf("AskPrice1:%lf\n", pDepthMarketData.AskPrice1);
+		printf("AskVolume1:%d\n", pDepthMarketData.AskVolume1);
+		//printf("AskPrice2:%lf\n", pDepthMarketData.AskPrice2);
+		//printf("AskVolume2:%d\n", pDepthMarketData.AskVolume2);
+        printf("-------------------------------------\n");
+        printf("-------------------------------------\n");
+        printf("-------------------------------------\n");
+    }
 }

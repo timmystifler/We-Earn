@@ -3,16 +3,7 @@
 
 static MD_MGR gs_md_mgr;
 
-//
-// 内部函数声明
-//
-
 MD_VEC* _md_mgr_get_md_vec_by_id(std::string id);
-
-
-//
-// 接口实现
-//
 
 int md_mgr_init()
 {
@@ -37,10 +28,6 @@ void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data)
     return;    
 }
 
-
-//
-// 内部函数实现
-//
 
 MD_VEC* _md_mgr_get_md_vec_by_id(std::string id)
 {
