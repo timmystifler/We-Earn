@@ -16,7 +16,7 @@ MD_VEC* _md_mgr_get_md_vec_by_id(std::string id);
 
 int md_mgr_init()
 {
-    printf("[INFO] md mgr init success!");
+    printf("[INFO] md mgr init success!\n");
     
 	return 0;
 }
@@ -28,7 +28,7 @@ void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data)
     MD_VEC* vec = _md_mgr_get_md_vec_by_id(id);
     if (vec == NULL)
     {
-        printf("[ERROR] md mgr find vec error, id %s", id.c_str());
+        printf("[ERROR] md mgr find vec error, id %s\n", id.c_str());
         return;
     }
 
@@ -52,6 +52,17 @@ MD_VEC* _md_mgr_get_md_vec_by_id(std::string id)
     if (iter != gs_md_mgr._map.end())
     {
         return &iter->second;
+    }
+    else
+    {
+        MD_VEC _vec;
+        gs_md_mgr._map.insert(std::pair<std::string, MD_VEC>(id, _vec));
+        
+        iter = gs_md_mgr._map.find(id);
+        if (iter != gs_md_mgr._map.end())
+        {
+            return &iter->second;
+        }
     }
 
     return NULL;
