@@ -42,7 +42,7 @@ void MD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 	}
 }
 
-char *gs_instrument_id[] = {"CU1205", "CU1206", "CU1803"};
+char *gs_instrument_id[] = {"cu1205", "cu1206", "cu1803"};
 void MD_SPI::ReqSubscribeMarketData()
 {
 	_api->SubscribeMarketData(gs_instrument_id, sizeof(gs_instrument_id) / sizeof(gs_instrument_id[0]));
