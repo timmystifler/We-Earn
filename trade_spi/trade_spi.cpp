@@ -3,20 +3,24 @@
 #include <stdio.h>
 #include <iostream>
 #include <unistd.h>
+#include "account_mgr.h"
+#include "login_account.h"
 
 static int req_id = 0;
 
-const char broker_id[] = "9999";
-const char user_id[] = "110238";
-const char passwd[]  = "lhc199707";
+static ACCOUNT_MGR *gs_td_account = NULL;
+static LOGIN_ACCOUNT *gs_login = NULL;
 
 void TD_SPI::ReqUserLogin()
 {
+    gs_login = LOGIN_ACCOUNT::get_login_account();
+
     CThostFtdcReqUserLoginField req;
     memset(&req, 0, sizeof(req));
-    strcpy(req.BrokerID, broker_id);
-    strcpy(req.UserID, user_id);
-    strcpy(req.Password, passwd);
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.UserID, gs_login->investor_id);
+    strcpy(req.Password, gs_login->now_passwd);
+
     int ret = _api->ReqUserLogin(&req, ++req_id);
     if (ret != 0)
     {
@@ -37,10 +41,10 @@ void TD_SPI::RegisterApiHandle(CThostFtdcTraderApi *api)
 void TD_SPI::ReqPasswordUpdate()
 {
     CThostFtdcUserPasswordUpdateField req;
-    strcpy(req.BrokerID, broker_id);
-    strcpy(req.UserID, user_id);
-    strcpy(req.OldPassword, "lhc997");
-    strcpy(req.NewPassword, "lhc199707");
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.UserID, gs_login->investor_id);
+    strcpy(req.OldPassword, gs_login->old_passwd);
+    strcpy(req.NewPassword, gs_login->now_passwd);
     
     int ret = _api->ReqUserPasswordUpdate(&req, ++req_id);
     if (ret == 0)
@@ -62,7 +66,7 @@ void TD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFt
     if (pRspInfo && pRspInfo->ErrorID == 0)
     {
         printf("login trade success, req id = %d\n", nRequestID);
-        ReqSettlementConfirmInfo();
+        //ReqSettlementConfirmInfo();
         ReqAccountInfo();
     }
     else
@@ -80,8 +84,8 @@ void TD_SPI::ReqAccountInfo()
 {
     CThostFtdcQryTradingAccountField req;
     memset(&req, 0, sizeof(req));
-    strcpy(req.BrokerID, broker_id);
-    strcpy(req.InvestorID, user_id);
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.InvestorID, gs_login->investor_id);
 
     int ret = 0;
     while(true)
@@ -114,8 +118,8 @@ void TD_SPI::ReqSettlementConfirmInfo()
 {
     CThostFtdcSettlementInfoConfirmField req;
     memset(&req, 0, sizeof(req));
-    strcpy(req.BrokerID, broker_id);
-    strcpy(req.InvestorID, user_id);
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.InvestorID, gs_login->investor_id);
     int ret = _api->ReqSettlementInfoConfirm(&req, ++req_id);
     if (ret != 0)
     {
@@ -147,6 +151,85 @@ void TD_SPI::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFt
 void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     std::cout << pTradingAccount->Available << std::endl;
+
+    gs_td_account = ACCOUNT_MGR::get_mgr();
+    if (!gs_td_account || !pTradingAccount) 
+    {
+        printf("rsp for trading account error\n");
+    }
+    else
+    {
+        //trade module init finish prepare for work
+        gs_td_account->init(pTradingAccount);
+        working = true;
+    }
+}
+
+void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset)
+{
+    if (!working) return;
+
+    CThostFtdcInputOrderField req;
+    memset(&req, 0, sizeof(req));
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.InvestorID, gs_login->investor_id);
+    strcpy(req.InstrumentID, instrument_id);
+    strcpy(req.OrderRef, "0");
+    req.OrderPriceType = THOST_FTDC_OPT_AskPrice1;
+    req.Direction = THOST_FTDC_D_Buy;
+    req.CombOffsetFlag[0] = comb_offset;
+    req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+    req.LimitPrice = 0;
+    req.VolumeTotalOriginal = 1;
+    req.TimeCondition = THOST_FTDC_TC_GFD;
+    req.VolumeCondition = THOST_FTDC_TC_IOC;
+    req.MinVolume = 1;
+    req.ContingentCondition = THOST_FTDC_CC_Immediately;
+    req.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
+    req.IsAutoSuspend = 0;
+    req.UserForceClose = 0;
+
+    int ret = _api->ReqOrderInsert(&req, ++req_id);
+    if (ret != 0)
+    {
+        printf("failed to send order req\n");
+    }
+    else
+    {
+        printf("send order success\n");
+    }
+}
+
+void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset)
+{
+    if (!working) return;
+
+    CThostFtdcInputOrderField req;
+    memset(&req, 0, sizeof(req));
+    strcpy(req.BrokerID, gs_login->broker_id);
+    strcpy(req.InvestorID, gs_login->investor_id);
+    strcpy(req.InstrumentID, instrument_id);
+    strcpy(req.OrderRef, "0");
+    req.OrderPriceType = THOST_FTDC_OPT_BestPrice;
+    req.Direction = THOST_FTDC_D_Buy;
+    req.CombOffsetFlag[0] = comb_offset;
+    req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+    req.LimitPrice = 0;
+    req.VolumeTotalOriginal = 1;
+    req.TimeCondition = THOST_FTDC_TC_GFD;
+    req.VolumeCondition = THOST_FTDC_TC_IOC;
+    req.MinVolume = 1;
+    req.ContingentCondition = THOST_FTDC_CC_Immediately;
+    req.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
+    req.IsAutoSuspend = 0;
+    req.UserForceClose = 0;
+
+    int ret = _api->ReqOrderInsert(&req, ++req_id);
+    if (ret != 0)
+    {
+        printf("failed to send order req\n");
+    }
+
 }
 
 void TD_SPI::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -155,7 +238,23 @@ void TD_SPI::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestor
 
 void TD_SPI::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+    if (pRspInfo && pRspInfo->ErrorID == 0)
+    {
+        printf("send order insert success\n");
+    }
+    else
+    {
+        if (pRspInfo) printf("send order insert failed, ret[%d]", pRspInfo->ErrorID);
+    }
+
+    printf("on rsp\n");
 }
+
+void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
+{
+    printf("order status:%c\n", pOrder->OrderStatus);
+}
+
 
 void TD_SPI::OnRspExecOrderInsert(CThostFtdcInputExecOrderField *pInputExecOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
@@ -186,10 +285,6 @@ void TD_SPI::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool b
 }
 
 void TD_SPI::OnFrontDisconnected(int nReason)
-{
-}
-
-void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
 }
 

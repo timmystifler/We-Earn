@@ -1,11 +1,14 @@
 #ifndef _TRADE_SPI_H_
 #define _TRADE_SPI_H_
 
+#include <stdlib.h>
 #include "ThostFtdcTraderApi.h"
 
 class TD_SPI: public CThostFtdcTraderSpi
 {
     public:
+        TD_SPI() : _api(NULL), working(false) {}
+
         void OnFrontConnected();
 
         void RegisterApiHandle();
@@ -52,6 +55,10 @@ class TD_SPI: public CThostFtdcTraderSpi
 
         void RegisterApiHandle(CThostFtdcTraderApi *api);
         void OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+
+        void ReqBuyOrderInsert(const char *instrument_id, char comb_offset);
+
+        void ReqSellOrderInsert(const char *instrument_id, char comb_offset);
     private:
         void ReqUserLogin();
 
@@ -64,6 +71,8 @@ class TD_SPI: public CThostFtdcTraderSpi
         void ReqPasswordUpdate();
 
         CThostFtdcTraderApi *_api;
+
+        bool working;
 };
 
 

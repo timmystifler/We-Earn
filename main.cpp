@@ -18,6 +18,8 @@ const char *gs_td_front_addr[] = {"tcp://180.168.146.187:10030"
                           , "tcp://218.202.237.33:10002"
 };
 
+TD_SPI *td_spi;
+
 int main()
 {
 	int ret = 0;
@@ -28,7 +30,7 @@ int main()
 		printf("failed to create md api\n");
 		return -1;
 	}
-	int server_num = 0;
+	int server_num = 1;
 	MD_SPI *md_spi = new MD_SPI;
 	md_api->RegisterSpi(md_spi);
 	md_spi->RegisterApiHandle(md_api);
@@ -41,7 +43,7 @@ int main()
         printf("failed to create td api\n");
         return -1;
     }
-    TD_SPI *td_spi = new TD_SPI();
+    td_spi = new TD_SPI();
     td_api->RegisterSpi(td_spi);
     td_spi->RegisterApiHandle(td_api);
     td_api->RegisterFront((char *)gs_td_front_addr[server_num]);

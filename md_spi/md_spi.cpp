@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "md_mgr.h"
+#include "strategy_api.h"
 
 //front address connected
 void MD_SPI::OnFrontConnected()
@@ -68,8 +69,8 @@ void MD_SPI::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketDa
 	{
         PrintMarketData(*pDepthMarketData);
 
-		//todo manuzhang
 		md_mgr_insert_data(*pDepthMarketData);
+        run_strategy(pDepthMarketData->InstrumentID);
 	}
 }
 
@@ -94,7 +95,7 @@ void MD_SPI::PrintMarketData(CThostFtdcDepthMarketDataField &pDepthMarketData)
 		//printf("ClosePrice:%lf\n", pDepthMarketData.ClosePrice);
 		//printf("SettlementPrice:%lf\n", pDepthMarketData.SettlementPrice);
 		printf("BidPrice1:%lf\n", pDepthMarketData.BidPrice1);
-		printf("BidVolume1:%lf\n", pDepthMarketData.BidVolume1);
+		printf("BidVolume1:%d\n", pDepthMarketData.BidVolume1);
 		//printf("BidPrice2:%lf\n", pDepthMarketData.BidPrice2);
 		//printf("BidVolume2:%lf\n", pDepthMarketData.BidVolume2);
 		printf("AskPrice1:%lf\n", pDepthMarketData.AskPrice1);

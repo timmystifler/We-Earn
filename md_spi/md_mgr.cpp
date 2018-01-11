@@ -1,9 +1,10 @@
-#include "md_mgr.h"
 #include <stdio.h>
+#include "md_mgr.h"
 
 static MD_MGR gs_md_mgr;
 
-MD_VEC* _md_mgr_get_md_vec_by_id(std::string id);
+static MD_VEC* _md_mgr_get_md_vec_by_id(std::string id);
+static int* _md_mgr_get_tick_by_id(std::string id);
 
 int md_mgr_init()
 {
@@ -24,6 +25,11 @@ void md_mgr_insert_data(CThostFtdcDepthMarketDataField& data)
     }
 
     vec->push_back(data);
+
+    int *tick = _md_mgr_get_tick_by_id(id);
+    if (!tick) printf("tick not find\n");
+
+    ++(*tick);
 
     return;    
 }
@@ -55,4 +61,33 @@ MD_VEC* _md_mgr_get_md_vec_by_id(std::string id)
     return NULL;
 }
 
+int* _md_mgr_get_tick_by_id(std::string id)
+{
+    TICK_MAP::iterator iter;
 
+    iter = gs_md_mgr._tick.find(id);
+
+    if (iter != gs_md_mgr._tick.end()) return &iter->second;
+    else
+    {
+        int tick = 0;
+        gs_md_mgr._tick[id] = tick;
+
+        iter = gs_md_mgr._tick.find(id);
+        return &iter->second;
+    }
+
+    return NULL;
+}
+
+const MD_VEC *md_mgr_find_data(std::string instrument_id)
+{
+    return _md_mgr_get_md_vec_by_id(instrument_id);
+}
+
+int md_mgr_find_tick(std::string instrument_id)
+{
+    int *tick =  _md_mgr_get_tick_by_id(instrument_id);
+    if (!tick) return 0;
+    return *tick;
+}
