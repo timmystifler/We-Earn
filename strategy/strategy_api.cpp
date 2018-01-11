@@ -27,14 +27,14 @@ void _strategy_on_open(std::string instrument_id)
      && cur_vec[size - 1].BidVolume1 > cur_vec[size - 1].AskVolume1)
     {
         printf("buy!!!!\n");
-        td_spi->ReqBuyOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open);
+        td_spi->ReqBuyOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].AskPrice1);
     }
 
     if (cur_vec[size - 1].LastPrice < cur_vec[size - 2].LastPrice 
      && cur_vec[size - 1].BidVolume1 < cur_vec[size - 1].AskVolume2)
     {
         printf("sell!!!!\n");
-        td_spi->ReqSellOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open);
+        td_spi->ReqSellOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].BidPrice1);
     }
 }
 

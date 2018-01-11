@@ -30,7 +30,7 @@ int main()
 		printf("failed to create md api\n");
 		return -1;
 	}
-	int server_num = 1;
+	int server_num = 0;
 	MD_SPI *md_spi = new MD_SPI;
 	md_api->RegisterSpi(md_spi);
 	md_spi->RegisterApiHandle(md_api);

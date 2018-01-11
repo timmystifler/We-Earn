@@ -56,9 +56,9 @@ class TD_SPI: public CThostFtdcTraderSpi
         void RegisterApiHandle(CThostFtdcTraderApi *api);
         void OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
-        void ReqBuyOrderInsert(const char *instrument_id, char comb_offset);
+        void ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price);
 
-        void ReqSellOrderInsert(const char *instrument_id, char comb_offset);
+        void ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price);
     private:
         void ReqUserLogin();
 

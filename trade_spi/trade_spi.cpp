@@ -61,12 +61,16 @@ void TD_SPI::OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPas
     }
 }
 
+TThostFtdcOrderRefType  ORDER_REF;
 void TD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     if (pRspInfo && pRspInfo->ErrorID == 0)
     {
         printf("login trade success, req id = %d\n", nRequestID);
-        //ReqSettlementConfirmInfo();
+        int iNextOrderRef = atoi(pRspUserLogin->MaxOrderRef);
+        iNextOrderRef++;
+        sprintf(ORDER_REF, "%d", iNextOrderRef);
+        ReqSettlementConfirmInfo();
         ReqAccountInfo();
     }
     else
@@ -165,7 +169,7 @@ void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccou
     }
 }
 
-void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset)
+void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price)
 {
     if (!working) return;
 
@@ -174,15 +178,16 @@ void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset)
     strcpy(req.BrokerID, gs_login->broker_id);
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
-    strcpy(req.OrderRef, "0");
-    req.OrderPriceType = THOST_FTDC_OPT_AskPrice1;
+    strcpy(req.UserID, gs_login->investor_id);
+    strcpy(req.OrderRef, ORDER_REF);
+    req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
     req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
-    req.LimitPrice = 0;
+    req.LimitPrice = price;
     req.VolumeTotalOriginal = 1;
     req.TimeCondition = THOST_FTDC_TC_GFD;
-    req.VolumeCondition = THOST_FTDC_TC_IOC;
+    req.VolumeCondition = THOST_FTDC_VC_AV;
     req.MinVolume = 1;
     req.ContingentCondition = THOST_FTDC_CC_Immediately;
     req.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
@@ -200,7 +205,7 @@ void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset)
     }
 }
 
-void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset)
+void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price)
 {
     if (!working) return;
 
@@ -210,11 +215,11 @@ void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset)
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
     strcpy(req.OrderRef, "0");
-    req.OrderPriceType = THOST_FTDC_OPT_BestPrice;
+    req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
     req.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
-    req.LimitPrice = 0;
+    req.LimitPrice = price;
     req.VolumeTotalOriginal = 1;
     req.TimeCondition = THOST_FTDC_TC_GFD;
     req.VolumeCondition = THOST_FTDC_TC_IOC;
@@ -253,6 +258,7 @@ void TD_SPI::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdc
 void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
     printf("order status:%c\n", pOrder->OrderStatus);
+    printf("order status:%s\n", pOrder->StatusMsg);
 }
 
 
