@@ -1,3 +1,5 @@
+#define _GLIBCXX_USE_CXX11_ABI 0
+
 #include <stdio.h>
 #include <string.h>
 #include "ThostFtdcTraderApi.h"
