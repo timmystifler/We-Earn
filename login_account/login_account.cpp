@@ -6,6 +6,10 @@ LOGIN_ACCOUNT LOGIN_ACCOUNT::gs_login_account;
 //warning : if now passwd is not ok use old passwd to login
 LOGIN_ACCOUNT::LOGIN_ACCOUNT()
 {
+    front_id   = 0;
+    session_id = 0;
+    order_ref  = 0;
+
     strcpy(broker_id, "9999\0");
     strcpy(investor_id, "110238\0");
     strcpy(old_passwd, "lhc997\0");

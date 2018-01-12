@@ -41,13 +41,14 @@ int main()
 {
     int ret = 0;
 
-
+    
     ret = log4cpp_init();
     if (ret != 0)
     {
         printf("log4cpp init error!\n");
         return ret;
     }
+    
 
     ret = md_mgr_init();
     if (ret != 0)
@@ -55,8 +56,6 @@ int main()
         return ret;
     }
 
-
-	
 	// set true to use udp
 	CThostFtdcMdApi *md_api = CThostFtdcMdApi::CreateFtdcMdApi("./output", false);
 	if (!md_api) 
@@ -64,7 +63,7 @@ int main()
 		printf("failed to create md api\n");
 		return -1;
 	}
-	int server_num = 0;
+	int server_num = 1;
 	MD_SPI *md_spi = new MD_SPI;
 	md_api->RegisterSpi(md_spi);
 	md_spi->RegisterApiHandle(md_api);
@@ -95,6 +94,7 @@ int main()
 // internal functions
 //
 
+
 int log4cpp_init()
 {
     std::string initFileName = "cfg/log4cpp.properties";
@@ -108,6 +108,7 @@ int log4cpp_init()
     log4cpp::Category& sub2 = 
     	log4cpp::Category::getInstance(std::string("sub1.sub2"));
 
+    /*
     root.warn("Storm is coming");
 
     sub1.debug("Received storm warning");
@@ -122,10 +123,12 @@ int log4cpp_init()
     sub1.info("All hatches closed");
 
     root.info("Ready for storm.");
+    */
 
     log4cpp::Category::shutdown();
 
     return 0;
 }
+
 
 

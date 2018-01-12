@@ -3,12 +3,14 @@
 #include <string>
 #include <stdio.h>
 #include "trade_spi.h"
+#include "login_account.h"
 
 extern TD_SPI *td_spi;
 
 //strategy for open
 void _strategy_on_open(std::string instrument_id)
 {
+    return ;
     //get history md data
     const MD_VEC *vec = md_mgr_find_data(instrument_id);
     if (!vec) 
@@ -27,14 +29,14 @@ void _strategy_on_open(std::string instrument_id)
      && cur_vec[size - 1].BidVolume1 > cur_vec[size - 1].AskVolume1)
     {
         printf("buy!!!!\n");
-        td_spi->ReqBuyOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].AskPrice1);
+        td_spi->ReqBuyOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].AskPrice1, 1, LOGIN_ACCOUNT::account().order_ref_add_and_get());
     }
 
     if (cur_vec[size - 1].LastPrice < cur_vec[size - 2].LastPrice 
-     && cur_vec[size - 1].BidVolume1 < cur_vec[size - 1].AskVolume2)
+     && cur_vec[size - 1].BidVolume1 < cur_vec[size - 1].AskVolume1)
     {
         printf("sell!!!!\n");
-        td_spi->ReqSellOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].BidPrice1);
+        td_spi->ReqSellOrderInsert(instrument_id.c_str(), THOST_FTDC_OF_Open, cur_vec[size - 1].BidPrice1, 1, LOGIN_ACCOUNT::account().order_ref_add_and_get());
     }
 }
 

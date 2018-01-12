@@ -5,15 +5,23 @@
 #include <unistd.h>
 #include "account_mgr.h"
 #include "login_account.h"
+#include "instrument.h"
 
 static int req_id = 0;
 
 static ACCOUNT_MGR *gs_td_account = NULL;
 static LOGIN_ACCOUNT *gs_login = NULL;
 
+static char *itoa(int num)
+{
+    static char buf[100];
+    sprintf(buf, "%d", num);
+    return buf;
+}
+
 void TD_SPI::ReqUserLogin()
 {
-    gs_login = LOGIN_ACCOUNT::get_login_account();
+    gs_login = &LOGIN_ACCOUNT::account();
 
     CThostFtdcReqUserLoginField req;
     memset(&req, 0, sizeof(req));
@@ -61,15 +69,16 @@ void TD_SPI::OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPas
     }
 }
 
-TThostFtdcOrderRefType  ORDER_REF;
+
 void TD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     if (pRspInfo && pRspInfo->ErrorID == 0)
     {
         printf("login trade success, req id = %d\n", nRequestID);
-        int iNextOrderRef = atoi(pRspUserLogin->MaxOrderRef);
-        iNextOrderRef++;
-        sprintf(ORDER_REF, "%d", iNextOrderRef);
+        int order_ref = atoi(pRspUserLogin->MaxOrderRef);
+        gs_login->set_front_id(pRspUserLogin->FrontID);
+        gs_login->set_session_id(pRspUserLogin->SessionID);
+        gs_login->set_order_ref(order_ref);
         ReqSettlementConfirmInfo();
         ReqAccountInfo();
     }
@@ -107,7 +116,7 @@ void TD_SPI::ReqAccountInfo()
         else
         {
             printf("flow control wait\n");
-            sleep(5);
+            sleep(1);
         }
 
     }
@@ -154,6 +163,7 @@ void TD_SPI::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFt
 //imba pRspInfo always equal to zero in this func
 void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+    if (!pTradingAccount) return;
     std::cout << pTradingAccount->Available << std::endl;
 
     gs_td_account = ACCOUNT_MGR::get_mgr();
@@ -165,11 +175,12 @@ void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccou
     {
         //trade module init finish prepare for work
         gs_td_account->init(pTradingAccount);
+        ReqPosition();
         working = true;
     }
 }
 
-void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price)
+void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price, int volume, int order_ref)
 {
     if (!working) return;
 
@@ -179,7 +190,7 @@ void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, doub
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
     strcpy(req.UserID, gs_login->investor_id);
-    strcpy(req.OrderRef, ORDER_REF);
+    strcpy(req.OrderRef, itoa(order_ref));
     req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
@@ -205,7 +216,7 @@ void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, doub
     }
 }
 
-void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price)
+void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price, int volume, int order_ref)
 {
     if (!working) return;
 
@@ -214,7 +225,7 @@ void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, dou
     strcpy(req.BrokerID, gs_login->broker_id);
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
-    strcpy(req.OrderRef, "0");
+    strcpy(req.OrderRef, itoa(order_ref));
     req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
@@ -222,7 +233,7 @@ void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, dou
     req.LimitPrice = price;
     req.VolumeTotalOriginal = 1;
     req.TimeCondition = THOST_FTDC_TC_GFD;
-    req.VolumeCondition = THOST_FTDC_TC_IOC;
+    req.VolumeCondition = THOST_FTDC_VC_AV;
     req.MinVolume = 1;
     req.ContingentCondition = THOST_FTDC_CC_Immediately;
     req.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
@@ -237,8 +248,65 @@ void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, dou
 
 }
 
+void TD_SPI::ReqPosition()
+{
+    int ret = 0;
+    for (int i = 0; i < INSTRUMENT_MGR::mgr().num; ++i)
+    {
+        CThostFtdcQryInvestorPositionField req;
+        strcpy(req.BrokerID, gs_login->broker_id);
+        strcpy(req.InvestorID, gs_login->investor_id);
+        strcpy(req.InstrumentID, INSTRUMENT_MGR::mgr().instrument_id[i]);
+        while(true)
+        {
+            ret = _api->ReqQryInvestorPosition(&req, ++req_id);
+            if (IsFlowControl(ret)) 
+            {
+                usleep(500);
+                continue;
+            }
+
+            if (ret != 0)
+            {
+                printf("send req position failed, ret = %d\n", ret);
+            }
+            break;
+        }
+    }
+
+    printf("send req position success\n");
+}
+
+void TD_SPI::ReqDetailPosition()
+{
+    for (int i = 0; i < INSTRUMENT_MGR::mgr().num; ++i)
+    {
+        CThostFtdcQryInvestorPositionDetailField req;
+        strcpy(req.BrokerID, gs_login->broker_id);
+        strcpy(req.InvestorID, gs_login->investor_id);
+        strcpy(req.InstrumentID, INSTRUMENT_MGR::mgr().instrument_id[i]);
+        _api->ReqQryInvestorPositionDetail(&req, ++req_id);
+    }
+    printf("send query detail position\n");
+}
+
 void TD_SPI::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+    printf("recv investor position\n");
+    if (!pInvestorPosition) return;
+    if (pRspInfo && pRspInfo->ErrorID == 0)
+    {
+        printf("");
+    }
+
+}
+
+void TD_SPI::OnRspQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pInvestorPosition, int nRequestID)
+{
+    printf("recv investor position\n");
+    if (!pInvestorPosition) return;
+
+
 }
 
 void TD_SPI::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -251,12 +319,22 @@ void TD_SPI::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdc
     {
         if (pRspInfo) printf("send order insert failed, ret[%d]", pRspInfo->ErrorID);
     }
-
-    printf("on rsp\n");
 }
 
+bool TD_SPI::IsMyOrder(CThostFtdcOrderField *pOrder)
+{
+    if (!pOrder) return false;
+
+    if (pOrder->SessionID != gs_login->session_id
+     || pOrder->FrontID != gs_login->front_id) return false;
+
+    return true;
+}
 void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
+    if (!pOrder) return;
+    if (!IsMyOrder(pOrder)) return;
+
     printf("order status:%c\n", pOrder->OrderStatus);
     printf("order status:%s\n", pOrder->StatusMsg);
 }

@@ -22,6 +22,7 @@ class TD_SPI: public CThostFtdcTraderSpi
         void OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
         void OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+        void OnRspQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID);
 
         void OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
@@ -56,9 +57,9 @@ class TD_SPI: public CThostFtdcTraderSpi
         void RegisterApiHandle(CThostFtdcTraderApi *api);
         void OnRspUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
-        void ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price);
+        void ReqBuyOrderInsert(const char *instrument_id, char comb_offset, double price, int volume, int order_ref);
 
-        void ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price);
+        void ReqSellOrderInsert(const char *instrument_id, char comb_offset, double price, int volume, int order_ref);
     private:
         void ReqUserLogin();
 
@@ -66,9 +67,14 @@ class TD_SPI: public CThostFtdcTraderSpi
 
         void ReqAccountInfo();
 
+        void ReqPosition();
+        void ReqDetailPosition();
+
         bool IsFlowControl(int ret);
 
         void ReqPasswordUpdate();
+
+        bool IsMyOrder(CThostFtdcOrderField *pOrder);
 
         CThostFtdcTraderApi *_api;
 

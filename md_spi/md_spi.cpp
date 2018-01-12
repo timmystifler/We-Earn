@@ -3,6 +3,7 @@
 #include <string.h>
 #include "md_mgr.h"
 #include "strategy_api.h"
+#include "instrument.h"
 
 //front address connected
 void MD_SPI::OnFrontConnected()
@@ -47,7 +48,7 @@ void MD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 char *gs_instrument_id[] = {"ru1805", "cu1803"};
 void MD_SPI::ReqSubscribeMarketData()
 {
-	_api->SubscribeMarketData(gs_instrument_id, sizeof(gs_instrument_id) / sizeof(gs_instrument_id[0]));
+	_api->SubscribeMarketData(INSTRUMENT_MGR::mgr().instrument_id, INSTRUMENT_MGR::mgr().num);
 }
 
 void MD_SPI::OnRspSubMarketData(CThostFtdcSpecificInstrumentField *pSpecificInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
