@@ -45,7 +45,6 @@ void MD_SPI::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
 	}
 }
 
-char *gs_instrument_id[] = {"ru1805", "cu1803"};
 void MD_SPI::ReqSubscribeMarketData()
 {
 	_api->SubscribeMarketData(INSTRUMENT_MGR::mgr().instrument_id, INSTRUMENT_MGR::mgr().num);
@@ -77,7 +76,7 @@ void MD_SPI::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketDa
 
 void MD_SPI::PrintMarketData(CThostFtdcDepthMarketDataField &pDepthMarketData)
 {
-    bool print_on = false;
+    bool print_on = true;
 
     if (print_on)
     {

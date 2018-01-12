@@ -9,7 +9,7 @@ APP_EXE=./$(MOD_NAME)
 
 APP_LIB	= ./lib/trader_api_636/thostmduserapi.so ./lib/trader_api_636/thosttraderapi.so ./lib/log4cpp/liblog4cpp.a -lpthread
 
-SUB_MODULES= . md_spi trade_spi account login_account strategy instrument
+SUB_MODULES= . md_spi trade_spi account login_account strategy instrument position_mgr
 
 CINC += $(foreach dir,$(SUB_MODULES),-I $(dir))
 CINC += -I ./lib/trader_api_636 -I ./include/log4cpp

@@ -6,6 +6,7 @@
 #include "account_mgr.h"
 #include "login_account.h"
 #include "instrument.h"
+#include "position_mgr.h"
 
 static int req_id = 0;
 
@@ -144,7 +145,8 @@ void TD_SPI::ReqSettlementConfirmInfo()
     }
 }
 
-void TD_SPI::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+void TD_SPI::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm
+                                      , CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     if (pRspInfo && pRspInfo->ErrorID == 0)
     {
@@ -161,7 +163,8 @@ void TD_SPI::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument, CThostFt
 }
 
 //imba pRspInfo always equal to zero in this func
-void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
+void TD_SPI::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo
+                                   , int nRequestID, bool bIsLast)
 {
     if (!pTradingAccount) return;
     std::cout << pTradingAccount->Available << std::endl;
@@ -184,13 +187,17 @@ void TD_SPI::ReqBuyOrderInsert(const char *instrument_id, char comb_offset, doub
 {
     if (!working) return;
 
+    // if open use new ref, if close use old ref
+    int ref = (comb_offset == THOST_FTDC_OFEN_Open) ? 
+               LOGIN_ACCOUNT::account().order_ref_add_and_get() : order_ref;
+
     CThostFtdcInputOrderField req;
     memset(&req, 0, sizeof(req));
     strcpy(req.BrokerID, gs_login->broker_id);
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
     strcpy(req.UserID, gs_login->investor_id);
-    strcpy(req.OrderRef, itoa(order_ref));
+    strcpy(req.OrderRef, itoa(ref));
     req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
@@ -220,12 +227,16 @@ void TD_SPI::ReqSellOrderInsert(const char *instrument_id, char comb_offset, dou
 {
     if (!working) return;
 
+    // if open use new ref, if close use old ref
+    int ref = (comb_offset == THOST_FTDC_OFEN_Open) ? 
+               LOGIN_ACCOUNT::account().order_ref_add_and_get() : order_ref;
+
     CThostFtdcInputOrderField req;
     memset(&req, 0, sizeof(req));
     strcpy(req.BrokerID, gs_login->broker_id);
     strcpy(req.InvestorID, gs_login->investor_id);
     strcpy(req.InstrumentID, instrument_id);
-    strcpy(req.OrderRef, itoa(order_ref));
+    strcpy(req.OrderRef, itoa(ref));
     req.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     req.Direction = THOST_FTDC_D_Buy;
     req.CombOffsetFlag[0] = comb_offset;
@@ -290,23 +301,38 @@ void TD_SPI::ReqDetailPosition()
     printf("send query detail position\n");
 }
 
+bool TD_SPI::IsMsgOK(CThostFtdcRspInfoField *pRspInfo)
+{
+    bool result =  (pRspInfo && pRspInfo->ErrorID == 0);
+    if (!result && pRspInfo)
+    {
+        printf("msg error, code[%d] msg[%s]\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+    }
+
+    return result;
+}
+
 void TD_SPI::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     printf("recv investor position\n");
+    //if (!IsMsgOK(pRspInfo)) return;
     if (!pInvestorPosition) return;
-    if (pRspInfo && pRspInfo->ErrorID == 0)
-    {
-        printf("");
-    }
 
+    int order_ref = LOGIN_ACCOUNT::account().order_ref_add_and_get();
+    int tick = 0;
+    std::string instrument_id(pInvestorPosition->InstrumentID);
+    int volume = pInvestorPosition->Position;
+    int dir = 0;
+    if (pInvestorPosition->PosiDirection == THOST_FTDC_PD_Long) dir = E_POSITION_DIR_LONG;
+    else if (pInvestorPosition->PosiDirection == THOST_FTDC_PD_Short) dir = E_POSITION_DIR_SHORT;
+    
+    POSITION_MGR().mgr().add(order_ref, instrument_id, dir, volume, tick);    
 }
 
 void TD_SPI::OnRspQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pInvestorPosition, int nRequestID)
 {
-    printf("recv investor position\n");
+    printf("recv detail investor position\n");
     if (!pInvestorPosition) return;
-
-
 }
 
 void TD_SPI::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -330,6 +356,7 @@ bool TD_SPI::IsMyOrder(CThostFtdcOrderField *pOrder)
 
     return true;
 }
+
 void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
     if (!pOrder) return;
@@ -337,8 +364,55 @@ void TD_SPI::OnRtnOrder(CThostFtdcOrderField *pOrder)
 
     printf("order status:%c\n", pOrder->OrderStatus);
     printf("order status:%s\n", pOrder->StatusMsg);
+
+    switch (pOrder->OrderStatus)
+    {
+        case THOST_FTDC_OST_Touched:
+            //add order mgr
+            break;
+        case THOST_FTDC_OST_NotTouched:
+            break;
+        case THOST_FTDC_OST_Unknown:
+            break;
+        case THOST_FTDC_OST_Canceled:
+            //del order mgr
+            break;
+        case THOST_FTDC_OST_NoTradeNotQueueing:
+            break;
+        case THOST_FTDC_OST_NoTradeQueueing:
+            break;
+        case THOST_FTDC_OST_PartTradedNotQueueing:
+            break;
+        case THOST_FTDC_OST_PartTradedQueueing:
+            break;
+        case THOST_FTDC_OST_AllTraded:
+            HandleAllTraded(*pOrder);
+            break;
+        default:
+            break;
+    }
 }
 
+void TD_SPI::HandleAllTraded(CThostFtdcOrderField &order)
+{
+    int order_ref = atoi(order.OrderRef);
+    int volume = order.VolumeTraded;
+    int tick = 0;
+    int dir  = (order.Direction == THOST_FTDC_D_Buy) ? E_POSITION_DIR_LONG : E_POSITION_DIR_SHORT;
+    std::string instrument_id(order.InstrumentID);
+    
+    if (order.CombOffsetFlag[0] == THOST_FTDC_OFEN_Open)
+    {
+        POSITION_MGR::mgr().add(order_ref, instrument_id, dir, volume, tick);
+    }
+    else if (order.CombOffsetFlag[0] == THOST_FTDC_OFEN_Close
+          || order.CombOffsetFlag[0] == THOST_FTDC_OFEN_ForceClose
+          || order.CombOffsetFlag[0] == THOST_FTDC_OFEN_CloseToday
+          || order.CombOffsetFlag[0] == THOST_FTDC_OFEN_CloseYesterday)
+    {
+        POSITION_MGR::mgr().del(order_ref, volume);
+    }
+}
 
 void TD_SPI::OnRspExecOrderInsert(CThostFtdcInputExecOrderField *pInputExecOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
@@ -387,4 +461,3 @@ void TD_SPI::OnRtnQuote(CThostFtdcQuoteField *pQuote)
 void TD_SPI::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
 }
-

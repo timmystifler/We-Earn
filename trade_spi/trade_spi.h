@@ -71,11 +71,15 @@ class TD_SPI: public CThostFtdcTraderSpi
         void ReqDetailPosition();
 
         bool IsFlowControl(int ret);
+        bool IsMsgOK(CThostFtdcRspInfoField *pRspInfo);
+
+        void HandleAllTraded(CThostFtdcOrderField &order);
 
         void ReqPasswordUpdate();
 
         bool IsMyOrder(CThostFtdcOrderField *pOrder);
-
+    
+    private:
         CThostFtdcTraderApi *_api;
 
         bool working;
