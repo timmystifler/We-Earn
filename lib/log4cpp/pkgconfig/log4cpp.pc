@@ -1,4 +1,4 @@
-prefix=/home/ubuntu/lib_test
+prefix=/home/ubuntu/log4cpp/lib_test
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
